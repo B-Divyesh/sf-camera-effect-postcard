@@ -1,0 +1,9 @@
+{
+  "slug": "camera-effect-postcard",
+  "title": "Postcard FX",
+  "artifact_class": "pwa-offline",
+  "smallest_useful_product": "Phone-first local web app with face landmarks, three original geometric effects, portrait-safe crop guides, timer, and PNG download.",
+  "success_measure": "70% of permission-granting mobile users reach a downloaded PNG within two minutes.",
+  "constraints": "Process camera frames on device; never identify faces; explicit permission and deletion language; support no-camera preview mode.",
+  "monetization": "free"
+}
