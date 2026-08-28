@@ -1,97 +1,106 @@
-# Postcard FX v1 handoff
+# Postcard FX repair handoff
 
-## Independent verification 1 — **FAIL**
-
-**Candidate:** `ef7a555762c016b329eba3c28bed80304d67eb29`
+**Repair commit:** `154431232d940265b42a54e92c2751826d4ae683`
+**Base / verifier report:** `71b17f081fd490098fc9b796ddf795771205b539`
 **Live URL:** <https://camera-effect-postcard.sociobot.in/>
-**Verified:** 2026-08-28 UTC
-**Release verdict:** **FAIL — do not release.**
+**Deployed:** 2026-08-28 UTC via Azure Static Web Apps (`dist/`)
 
-The live deployment is byte-identical to the candidate build and the ordinary
-camera-preview/PWA paths pass. However, importing a syntactically valid backup
-with malformed `settings` persists corrupt local state. On the next reload the
-app throws `Cannot read properties of undefined (reading 'slice')` before
-attaching its event handlers, so users cannot use preview or capture and have
-no in-app recovery. This is P1 and fails the invalid-input/recovery acceptance
-contract.
+## Release verdict — PASS
 
-The full independent evidence, quality results, deployment comparison, PWA
-offline/update checks, and remaining P2/P3 findings are in
-`.factory/verification.md`. Fix the P1 import/startup validation and re-verify
-before release.
+All three findings from the independent verification are repaired without
+changing the camera, no-camera, capture, export, privacy, or PWA product
+behavior that had already passed.
 
-## What shipped
+### Repairs
 
-- A phone-first 4:5 postcard maker with explicit camera consent and a complete
-  no-camera path using original abstract art.
-- Correct cover-crop math based on intrinsic source dimensions, so landscape
-  and portrait camera feeds export without vertical squashing.
-- On-device browser `FaceDetector` positioning when supported, with a visible
-  centered crop-guide fallback and honest status text everywhere else. No face
-  recognition or identity data is used.
-- Three locally drawn Canvas 2D effects: Orbit bloom, Sun signal, and Party
-  post; 0/3/10-second timer; mirrored front-camera capture; motion freeze;
-  caption; 1200×1500 PNG output; download and Web Share paths.
-- Camera-error and permission-denial recovery, live status announcements,
-  keyboard control, 44 px touch targets, reduced-motion behavior, and a
-  confirmation before deleting the saved image.
-- IndexedDB retention for one latest postcard, localStorage preferences,
-  explicit JSON export/import, restore, and delete controls.
-- Installable PWA manifest with any/maskable icons and a versioned service
-  worker. The shell, app assets, legal pages, and no-camera artwork are
-  precached; updates surface an in-app reload notice.
-- Dedicated `/privacy/` and `/terms/` documents, crawl metadata, sitemap, MIT
-  license, project documentation, and the product-specific design thesis.
+1. **P1: malformed backup recovery**
+   - `isSavedSettings()` now accepts only the complete, exact v1 preference
+     shape (known effect, 0/3/10 timer, booleans, and a ≤42-character caption).
+   - Import validates the complete envelope, every settings field, and any PNG
+     data URL before writing either local store. A rejected backup leaves the
+     existing preferences and saved postcard unchanged.
+   - Startup validates persisted preferences, removes corrupt/legacy values,
+     and shows the user a recovery status instead of allowing initialization to
+     throw. Restored preferences no longer write partial defaults during
+     restoration.
+2. **P2: import control keyboard focus**
+   - The visible `Import local backup` print-block label receives the same
+     3 px cobalt focus treatment whenever its visually hidden file input has
+     focus.
+3. **P3: caching and response policy**
+   - Production JS, CSS, and preview art are content-hashed under `/assets/`;
+     the generated service worker precaches the exact hashed app, legal CSS,
+     and artwork URLs with a cache name derived from those URLs.
+   - `public/staticwebapp.config.json` is the native Azure Static Web Apps
+     deployment configuration. It applies CSP, `frame-ancestors 'none'`,
+     `X-Frame-Options: DENY`, `Permissions-Policy`, `nosniff`, strict referrer
+     policy, mutable document caching, and one-year immutable caching to
+     `/assets/*`.
 
-## Visual and asset record
+## Regression coverage
 
-The interface follows the “kinetic generative geometry” thesis in
-`.factory/design.md`: cream paper, navy ink, cobalt, brick coral, and acid-lime
-markers; Georgia plus system sans; print-block interactions; restrained canvas
-motion. The abstract preview portrait was generated with the factory Azure
-image deployment on 2026-08-28 from the prompt recorded in both the design doc
-and `assets/src/geometry-portrait.prompt.json`. It was manually reviewed and
-shipped as a 60 KB WebP (well below the 300 KB budget). PWA icons are original
-repo-authored geometry.
+- `tests/storage.test.ts` rejects each malformed settings field, overlong
+  caption, and unexpected fields.
+- `tests/e2e/app.spec.ts` imports the verifier's
+  `{"product":"postcard-fx","version":1,"settings":"corrupt"}` backup,
+  proves prior stored preferences are unchanged, reloads a separately corrupt
+  stored value, confirms recovery UI and working preview/capture, and records
+  no page errors. It also checks the visible import label's focus outline.
+- `tests/deployment-contract.test.ts` locks the Azure CSP/framing/permissions
+  and immutable hashed-asset policy into the test suite.
 
-## Verification
+## Verification evidence
 
 Run from a clean checkout:
 
 ```bash
-npm install
+npm ci
 npm test
 npm run build
 ```
 
-Verified on 2026-08-28:
+Completed on 2026-08-28:
 
-- `npm test`: 3/3 Vitest unit tests and 6/6 Playwright tests passed.
-- Playwright projects: Chromium at Pixel 5 mobile size and desktop Chromium.
-- End-to-end: keyboard-only preview → effect → 1200×1500 PNG; persisted result;
-  title/lang/main/one-h1 structure; legal pages; no console/page errors.
-- Offline: service worker reached controlling state, the browser was put into
-  offline mode with `context.setOffline(true)`, `/` reloaded, and preview mode
-  remained usable in both projects.
-- Axe: no serious or critical violations on `/`, `/privacy/`, or `/terms/` in
-  either project.
-- Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100,
-  SEO 100; FCP 0.9 s; LCP 1.4 s; TBT 0 ms; CLS 0.003.
-- Production budget: initial JS 13.75 KB raw / 5.62 KB gzip; CSS 12.24 KB raw /
-  3.68 KB gzip; hero WebP 60 KB; no webfonts. `npm audit` reports 0 known
-  vulnerabilities.
-- `npm run build` succeeds and writes `dist/index.html`, `dist/privacy/`, and
-  `dist/terms/` exactly under the deploy root.
+- `npm ci`: 60 packages installed; `npm audit --omit=dev --audit-level=high`:
+  0 vulnerabilities.
+- `npm test`: 5/5 Vitest unit/deployment-contract tests and 10/10 Playwright
+  tests passed. Playwright uses the production build at desktop Chromium and
+  Pixel 5 (390 × 844), including keyboard capture, malformed import/reload,
+  visible import focus, legal-page Axe scans, no-console/page-error checks, and
+  service-worker offline reload.
+- `npm run build`: TypeScript check and Vite production build passed; `dist/`
+  has its root `index.html`. Initial app JS is 14.86 kB raw / 6.04 kB gzip;
+  main CSS is 12.32 kB raw / 3.70 kB gzip; legal CSS is 1.14 kB raw / 0.63 kB
+  gzip; preview WebP is 58.55 kB; no webfonts ship.
+- Local production-build Lighthouse mobile: Performance 100, Accessibility
+  100, Best Practices 100, SEO 92; FCP 1.0 s, LCP 1.4 s, TBT 10 ms, CLS 0.003.
+  The SEO point is the expected localhost/HTTP limitation.
+- Visual review of the production build at 1366 × 900 and 390 × 844 confirmed
+  the original kinetic-generative-geometry presentation and responsive
+  phone-first layout remain intact.
+- Live `verify-url.sh`: HTTPS 200, title/lang/one h1/main/alt checks passed,
+  no browser console or page errors, 789 ms load in the verifier smoke run.
+- Live Axe: 0 serious/critical violations across `/`, `/privacy/`, and
+  `/terms/` at both 1366 × 900 and 390 × 844.
+- Live privacy capture observed only
+  `https://camera-effect-postcard.sociobot.in`; no third-party runtime origin
+  or remote font/script request occurred.
+- Live offline: a controlled live service worker cache
+  `postcard-fx-9fc4d09b8171` reloaded `/` offline and enabled no-camera
+  preview/capture with no errors. An isolated service-worker revision test
+  observed the in-app “A fresh version is ready.” update toast.
+- Live identity: root HTML, service worker, manifest, offline page, both legal
+  pages, app JS, both CSS files, preview WebP (10 files) were byte-identical
+  to `dist/` by SHA-256. Live root uses `max-age=0, must-revalidate`; the
+  hashed app JS returns `public, max-age=31536000, immutable`; CSP,
+  Permissions-Policy, `X-Frame-Options`, `nosniff`, strict referrer policy,
+  and HSTS are present.
 
-## Known gaps and next steps
+## Known gaps / next steps
 
-- Automated tests use the no-camera route because the worker has no physical
-  phone camera. Before launch, smoke-test front/back camera switching and the
-  share sheet on one iOS Safari and one Android Chrome device over HTTPS.
-- Face-following depends on the browser’s native `FaceDetector`. Unsupported
-  browsers deliberately use the centered guide rather than downloading a
-  multi-megabyte third-party vision model; capture and all three effects remain
-  functional. If tracking coverage becomes more important than the current
-  speed/privacy budget, evaluate a lazily loaded, self-hosted landmark model.
-- Static hosting must serve `/privacy/index.html` and `/terms/index.html` for
-  their directory URLs and use HTTPS for camera/PWA capabilities.
+- The automated environment has no physical phone camera. Before a broad
+  launch, smoke-test front/back camera switching and the native share sheet on
+  one iOS Safari and one Android Chrome device over HTTPS.
+- `FaceDetector` remains an on-device optional enhancement. Unsupported
+  browsers use the honest centered-guide fallback; no third-party vision model
+  or face data is introduced.
