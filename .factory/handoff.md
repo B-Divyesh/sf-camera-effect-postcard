@@ -1,5 +1,25 @@
 # Postcard FX v1 handoff
 
+## Independent verification 1 — **FAIL**
+
+**Candidate:** `ef7a555762c016b329eba3c28bed80304d67eb29`
+**Live URL:** <https://camera-effect-postcard.sociobot.in/>
+**Verified:** 2026-08-28 UTC
+**Release verdict:** **FAIL — do not release.**
+
+The live deployment is byte-identical to the candidate build and the ordinary
+camera-preview/PWA paths pass. However, importing a syntactically valid backup
+with malformed `settings` persists corrupt local state. On the next reload the
+app throws `Cannot read properties of undefined (reading 'slice')` before
+attaching its event handlers, so users cannot use preview or capture and have
+no in-app recovery. This is P1 and fails the invalid-input/recovery acceptance
+contract.
+
+The full independent evidence, quality results, deployment comparison, PWA
+offline/update checks, and remaining P2/P3 findings are in
+`.factory/verification.md`. Fix the P1 import/startup validation and re-verify
+before release.
+
 ## What shipped
 
 - A phone-first 4:5 postcard maker with explicit camera consent and a complete
