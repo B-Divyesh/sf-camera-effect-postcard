@@ -52,3 +52,36 @@ test('installed shell reopens offline', async ({ page, context }) => {
   await expect(page.locator('#capture-button')).toBeEnabled();
   await context.setOffline(false);
 });
+
+test('malformed backup never persists invalid preferences and startup recovers old bad data', async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  await page.goto('/');
+  const existingSettings = { effect: 'rays', timer: 10, mirror: false, frozen: true, caption: 'Keep this postcard setting' };
+  await page.evaluate((settings) => localStorage.setItem('postcard-fx-settings', JSON.stringify(settings)), existingSettings);
+
+  await page.locator('#import-data').setInputFiles({
+    name: 'corrupt-backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ product: 'postcard-fx', version: 1, settings: 'corrupt' }))
+  });
+  await expect(page.locator('#toast-text')).toHaveText('That file is not a valid Postcard FX backup.');
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('postcard-fx-settings'))).toBe(JSON.stringify(existingSettings));
+
+  // A legacy/manual bad local value must be cleared before app setup can break.
+  await page.evaluate(() => localStorage.setItem('postcard-fx-settings', JSON.stringify({ caption: null })));
+  await page.reload();
+  await expect(page.locator('#camera-status')).toContainText('Saved preferences were invalid and have been reset');
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('postcard-fx-settings'))).toBeNull();
+  await page.locator('#preview-button').click();
+  await expect(page.locator('#capture-button')).toBeEnabled();
+  expect(pageErrors).toEqual([]);
+});
+
+test('the visible import backup control shows focus when its file input is tabbed to', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#import-data').focus();
+  await expect(page.locator('#import-data')).toBeFocused();
+  await expect(page.locator('.import-label')).toHaveCSS('outline-width', '3px');
+  await expect(page.locator('.import-label')).toHaveCSS('outline-style', 'solid');
+});

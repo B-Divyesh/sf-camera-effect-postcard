@@ -59,7 +59,7 @@ opacity or instantly. A user can also pause live motion with the visible
 
 ## Asset plan and provenance
 
-- `public/art/geometry-portrait.webp`: generated abstract mannequin portrait
+- `src/assets/geometry-portrait.webp`: generated abstract mannequin portrait
   for the no-camera preview and onboarding illustration; it does not depict a
   real person and does not imply face recognition.
 - PWA icons and interface symbols are original hand-authored SVG/canvas
@@ -87,4 +87,3 @@ Generated with the factory Azure image deployment (`factory-image`) on
 artifacts, unintended marks, anatomy, and palette consistency. The source PNG
 and prompt sidecar live in `assets/src/`; the shipped WebP is optimized to stay
 below 300 KB. Generated imagery is disclosed in the footer.
-

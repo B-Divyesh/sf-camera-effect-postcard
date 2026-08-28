@@ -1,6 +1,23 @@
 export type SavedSettings = { effect: string; timer: number; mirror: boolean; frozen: boolean; caption: string };
+export type SettingsLoad = { settings: SavedSettings | null; recovered: boolean };
 const DB_NAME = 'postcard-fx';
 const STORE = 'postcards';
+
+const EFFECTS = ['orbit', 'rays', 'confetti'];
+const TIMERS = [0, 3, 10];
+
+/** Only accept the exact preference shape written by this version of the app. */
+export function isSavedSettings(value: unknown): value is SavedSettings {
+  if (!value || typeof value !== 'object') return false;
+  const settings = value as Record<string, unknown>;
+  const keys = Object.keys(settings).sort();
+  return keys.length === 5 && keys.join(',') === 'caption,effect,frozen,mirror,timer'
+    && typeof settings.effect === 'string' && EFFECTS.includes(settings.effect)
+    && typeof settings.timer === 'number' && TIMERS.includes(settings.timer)
+    && typeof settings.mirror === 'boolean'
+    && typeof settings.frozen === 'boolean'
+    && typeof settings.caption === 'string' && settings.caption.length <= 42;
+}
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -39,9 +56,24 @@ export async function deletePostcard(): Promise<void> {
   db.close();
 }
 
-export function saveSettings(settings: SavedSettings) { localStorage.setItem('postcard-fx-settings', JSON.stringify(settings)); }
-export function loadSettings(): SavedSettings | null {
-  try { return JSON.parse(localStorage.getItem('postcard-fx-settings') || 'null') as SavedSettings | null; } catch { return null; }
+export function saveSettings(settings: SavedSettings) {
+  if (!isSavedSettings(settings)) throw new Error('Invalid Postcard FX settings');
+  localStorage.setItem('postcard-fx-settings', JSON.stringify(settings));
+}
+
+/**
+ * Preferences are user-controlled local data. Remove a malformed legacy value
+ * so a bad import or interrupted write can never prevent startup.
+ */
+export function loadSettings(): SettingsLoad {
+  const raw = localStorage.getItem('postcard-fx-settings');
+  if (!raw) return { settings: null, recovered: false };
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (isSavedSettings(parsed)) return { settings: parsed, recovered: false };
+  } catch { /* Handle truncated or manually edited local data below. */ }
+  localStorage.removeItem('postcard-fx-settings');
+  return { settings: null, recovered: true };
 }
 
 export async function blobToDataUrl(blob: Blob): Promise<string> {

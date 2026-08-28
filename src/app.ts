@@ -1,7 +1,7 @@
 import './style.css';
 import { coverCrop, mapFaceBox, type Box, type Crop } from './geometry';
 import { drawEffect, drawPostcardFrame, type EffectName } from './effects';
-import { blobToDataUrl, dataUrlToBlob, deletePostcard, loadPostcard, loadSettings, savePostcard, saveSettings, type SavedSettings } from './storage';
+import { blobToDataUrl, dataUrlToBlob, deletePostcard, isSavedSettings, loadPostcard, loadSettings, savePostcard, saveSettings, type SavedSettings } from './storage';
 
 type SourceMode = 'idle' | 'preview' | 'camera';
 type DetectedFace = { boundingBox: DOMRectReadOnly };
@@ -67,25 +67,26 @@ function currentSettings(): SavedSettings {
 function persistSettings() { saveSettings(currentSettings()); }
 
 function restoreSettings() {
-  const saved = loadSettings();
-  if (!saved) return;
-  if (['orbit', 'rays', 'confetti'].includes(saved.effect)) selectEffect(saved.effect as EffectName);
+  const { settings: saved, recovered } = loadSettings();
+  if (!saved) return recovered;
+  if (['orbit', 'rays', 'confetti'].includes(saved.effect)) selectEffect(saved.effect as EffectName, false);
   timerSelect.value = String([0, 3, 10].includes(saved.timer) ? saved.timer : 3);
   mirrorToggle.checked = saved.mirror;
   motionToggle.checked = saved.frozen;
-  captionInput.value = saved.caption.slice(0, 42);
+  captionInput.value = saved.caption;
+  return recovered;
 }
 
 function updateCharacterCount() { characterCount.textContent = `${captionInput.value.length} / 42`; }
 
-function selectEffect(next: EffectName) {
+function selectEffect(next: EffectName, persist = true) {
   effect = next;
   document.querySelectorAll<HTMLButtonElement>('[data-effect]').forEach((button) => {
     const selected = button.dataset.effect === next;
     button.classList.toggle('is-selected', selected);
     button.setAttribute('aria-pressed', String(selected));
   });
-  persistSettings();
+  if (persist) persistSettings();
 }
 
 function stopCamera() {
@@ -280,10 +281,26 @@ async function exportData() {
 
 async function importData(file: File) {
   try {
-    const payload = JSON.parse(await file.text()) as { product?: string; version?: number; settings?: SavedSettings; postcard?: string | null };
-    if (payload.product !== 'postcard-fx' || payload.version !== 1) throw new Error('Wrong backup format');
-    if (payload.settings) { saveSettings(payload.settings); restoreSettings(); updateCharacterCount(); }
-    if (payload.postcard) { const blob = await dataUrlToBlob(payload.postcard); if (blob.type !== 'image/png') throw new Error('Wrong image type'); await savePostcard(blob); await displayResult(blob, false); }
+    const payload: unknown = JSON.parse(await file.text());
+    if (!payload || typeof payload !== 'object') throw new Error('Wrong backup format');
+    const backup = payload as { product?: unknown; version?: unknown; settings?: unknown; postcard?: unknown };
+    if (backup.product !== 'postcard-fx' || backup.version !== 1 || !isSavedSettings(backup.settings)) throw new Error('Wrong backup format');
+
+    // Validate every field before touching either local store. Imports are atomic
+    // from the user's point of view: a bad image cannot partially overwrite prefs.
+    let postcard: Blob | null = null;
+    if (backup.postcard !== null && backup.postcard !== undefined) {
+      if (typeof backup.postcard !== 'string' || !backup.postcard.startsWith('data:image/png;base64,')) throw new Error('Wrong image type');
+      postcard = await dataUrlToBlob(backup.postcard);
+      const signature = new Uint8Array(await postcard.slice(0, 8).arrayBuffer());
+      const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10];
+      if (postcard.type !== 'image/png' || !pngSignature.every((byte, index) => signature[index] === byte)) throw new Error('Wrong image type');
+    }
+
+    saveSettings(backup.settings);
+    restoreSettings();
+    updateCharacterCount();
+    if (postcard) { await savePostcard(postcard); await displayResult(postcard, false); }
     showToast('Local backup imported.');
   } catch { showToast('That file is not a valid Postcard FX backup.'); }
 }
@@ -338,7 +355,9 @@ function setupServiceWorker() {
 }
 
 async function init() {
-  restoreSettings(); updateCharacterCount(); setupEvents(); setupInstall(); setupServiceWorker(); updateNetworkStatus();
+  const recoveredPreferences = restoreSettings();
+  updateCharacterCount(); setupEvents(); setupInstall(); setupServiceWorker(); updateNetworkStatus();
+  if (recoveredPreferences) announce('Saved preferences were invalid and have been reset. You can continue with a fresh postcard.', true);
   animationFrame = requestAnimationFrame(render);
   try {
     const saved = await loadPostcard();

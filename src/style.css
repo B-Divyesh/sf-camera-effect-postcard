@@ -123,6 +123,7 @@ select { max-width: 145px; }
 .data-tools p { max-width: 650px; margin: 0; color: var(--ink-soft); }
 .import-label { cursor: pointer; }
 .import-label input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.import-label:focus-within { outline: 3px solid var(--cobalt); outline-offset: 3px; }
 
 footer { display: grid; grid-template-columns: 1fr auto; gap: 10px 24px; padding: 28px clamp(18px, 5vw, 72px) max(28px, env(safe-area-inset-bottom)); color: white; background: var(--ink); }
 footer p { margin: 0; }
