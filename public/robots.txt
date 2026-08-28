@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://camera-effect-postcard.sociobot.in/sitemap.xml
