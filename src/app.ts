@@ -33,6 +33,7 @@ const restoreButton = $('#restore-button') as HTMLButtonElement;
 const toast = $('#toast') as HTMLElement;
 const toastText = $('#toast-text') as HTMLElement;
 const toastAction = $('#toast-action') as HTMLButtonElement;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 let sourceMode: SourceMode = 'idle';
 let effect: EffectName = 'orbit';
@@ -65,6 +66,8 @@ function currentSettings(): SavedSettings {
 }
 
 function persistSettings() { saveSettings(currentSettings()); }
+
+function motionIsFrozen() { return motionToggle.checked || reducedMotion.matches; }
 
 function restoreSettings() {
   const { settings: saved, recovered } = loadSettings();
@@ -182,7 +185,7 @@ function render(now: number) {
     ctx.clearRect(0, 0, effectsCanvas.width, effectsCanvas.height);
     let crop: Crop | undefined;
     if (sourceMode === 'camera' && video.videoWidth) crop = coverCrop(video.videoWidth, video.videoHeight, effectsCanvas.width, effectsCanvas.height);
-    drawEffect(ctx, effectsCanvas.width, effectsCanvas.height, canvasFace(effectsCanvas.width, effectsCanvas.height, crop), effect, now, motionToggle.checked);
+    drawEffect(ctx, effectsCanvas.width, effectsCanvas.height, canvasFace(effectsCanvas.width, effectsCanvas.height, crop), effect, now, motionIsFrozen());
     drawPostcardFrame(ctx, effectsCanvas.width, effectsCanvas.height, captionInput.value);
   }
   if (sourceMode === 'camera') void detectFace(now);
@@ -229,7 +232,7 @@ async function makePostcard() {
       crop = coverCrop(previewImage.naturalWidth, previewImage.naturalHeight, output.width, output.height);
       drawSource(ctx, previewImage, previewImage.naturalWidth, previewImage.naturalHeight, crop, false);
     }
-    drawEffect(ctx, output.width, output.height, canvasFace(output.width, output.height, crop), effect, performance.now(), motionToggle.checked);
+    drawEffect(ctx, output.width, output.height, canvasFace(output.width, output.height, crop), effect, performance.now(), motionIsFrozen());
     drawPostcardFrame(ctx, output.width, output.height, captionInput.value.trim());
     const blob = await new Promise<Blob>((resolve, reject) => output.toBlob((value) => value ? resolve(value) : reject(new Error('PNG export failed')), 'image/png'));
     await displayResult(blob, true);
@@ -248,7 +251,7 @@ async function displayResult(blob: Blob, save: boolean) {
   resultImage.src = latestUrl; downloadLink.href = latestUrl;
   result.hidden = false; restoreButton.hidden = false;
   if (save) await savePostcard(blob);
-  result.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  result.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'start' });
   downloadLink.focus({ preventScroll: true });
 }
 

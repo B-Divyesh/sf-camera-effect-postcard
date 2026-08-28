@@ -40,15 +40,18 @@ use HTTPS when testing from another phone on the network.
 
 ```bash
 npm test
+npm run lint
 npm run build
 npm run preview
 ```
 
 `npm test` runs unit coverage for crop/mirroring math plus Playwright flows on
 mobile and desktop, including keyboard capture, axe accessibility checks, and a
-real service-worker offline reload. The exact production build command is
-`npm run build`; deploy the generated `dist/` directory with `dist/index.html`
-at its root.
+real service-worker offline reload. Playwright serves `dist/` with the deployed
+Azure response policy, so CSP-sensitive flows are covered locally. Run
+`npm run preview:policy` after a build to use that server manually. The exact
+production build command is `npm run build`; deploy the generated `dist/`
+directory with `dist/index.html` at its root.
 
 ## Browser behavior
 

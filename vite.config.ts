@@ -11,7 +11,7 @@ function versionedServiceWorker() {
       const dist = resolve(root, 'dist');
       const pages = await Promise.all(['index.html', 'privacy/index.html', 'terms/index.html'].map((page) => readFile(resolve(dist, page), 'utf8')));
       const shell = ['/', '/index.html', '/offline.html', '/privacy/', '/terms/', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-maskable-512.png'];
-      for (const page of pages) for (const match of page.matchAll(/(?:src|href)="(\/assets\/[^\"]+)"/g)) shell.push(match[1]);
+      for (const page of pages) for (const match of page.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)) shell.push(match[1]);
       const uniqueShell = [...new Set(shell)];
       const version = `postcard-fx-${createHash('sha256').update(uniqueShell.join('|')).digest('hex').slice(0, 12)}`;
       const template = await readFile(resolve(root, 'public/service-worker.js'), 'utf8');
