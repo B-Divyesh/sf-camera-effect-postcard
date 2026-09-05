@@ -1,0 +1,135 @@
+[
+  {
+    "id": "free-use",
+    "claim": "Free to use",
+    "where": "Landing facts, terms, README",
+    "test": "npm run test:e2e -- --grep @claim:free-use",
+    "sandbox": "Open the demo and download its completed postcard without any payment step."
+  },
+  {
+    "id": "phone-first",
+    "claim": "Works on a phone-sized screen",
+    "where": "README",
+    "test": "npm run test:e2e -- --grep @claim:phone-first",
+    "sandbox": "At 390 px, the demo has no horizontal overflow and shows its completed postcard."
+  },
+  {
+    "id": "portrait-safe-crop",
+    "claim": "Makes a portrait-safe 4:5 postcard",
+    "where": "Landing maker and README",
+    "test": "npm run test:e2e -- --grep @claim:portrait-safe-crop",
+    "sandbox": "The demo result has the observable 1200 by 1500 portrait dimensions."
+  },
+  {
+    "id": "no-account",
+    "claim": "No account is required",
+    "where": "Landing facts and README",
+    "test": "npm run test:e2e -- --grep @claim:no-account",
+    "sandbox": "A fresh browser opens the demo result and its download without registration."
+  },
+  {
+    "id": "no-upload",
+    "claim": "Does not upload postcard data",
+    "where": "Landing facts, privacy policy, README",
+    "test": "npm run test:e2e -- --grep @claim:no-upload",
+    "sandbox": "Make a demo postcard and assert that HTTP requests are same-origin GET or HEAD requests only."
+  },
+  {
+    "id": "offline-reload",
+    "claim": "Works offline after the first visit",
+    "where": "Landing facts, offline page, privacy policy, README",
+    "test": "npm run test:e2e -- --grep @claim:offline-reload",
+    "sandbox": "Use a new browser context, visit the demo once, then set it offline and reopen the demo postcard."
+  },
+  {
+    "id": "local-processing",
+    "claim": "Frames stay on this device",
+    "where": "Landing privacy note, privacy policy, README",
+    "test": "npm run test:e2e -- --grep @claim:local-processing",
+    "sandbox": "Make a new demo postcard and record every HTTP(S) request, allowing only this product origin."
+  },
+  {
+    "id": "camera-stops-after-capture",
+    "claim": "The camera stops after a postcard is made",
+    "where": "Privacy policy, README",
+    "test": "npm run test:e2e -- --grep @claim:camera-stops-after-capture",
+    "sandbox": "Use Chromium's fake camera, make a demo postcard, and observe its video track stop."
+  },
+  {
+    "id": "camera-stops-tab-close",
+    "claim": "Closing the tab stops the camera",
+    "where": "Landing privacy note, privacy policy, README",
+    "test": "npm run test:e2e -- --grep @claim:camera-stops-tab-close",
+    "sandbox": "Use Chromium's fake camera, close its demo tab, and observe its video track stop."
+  },
+  {
+    "id": "no-audio",
+    "claim": "Audio is never requested",
+    "where": "Privacy policy, README",
+    "test": "npm run test:e2e -- --grep @claim:no-audio",
+    "sandbox": "Record the browser camera constraints from a demo camera action and assert audio is false."
+  },
+  {
+    "id": "three-effects",
+    "claim": "Includes three geometric effects",
+    "where": "Landing maker and README",
+    "test": "npm run test:e2e -- --grep @claim:three-effects",
+    "sandbox": "Select each demo effect and assert the visible canvas output changes each time."
+  },
+  {
+    "id": "optional-face-positioning",
+    "claim": "Face positioning is optional",
+    "where": "Landing instructions, privacy policy, README",
+    "test": "npm run test:e2e -- --grep @claim:optional-face-positioning",
+    "sandbox": "Use the fake camera without FaceDetector and make a postcard with the centered guide fallback."
+  },
+  {
+    "id": "postcard-4x5",
+    "claim": "Exports a 4:5 PNG postcard",
+    "where": "Landing maker and README",
+    "test": "npm run test:e2e -- --grep @claim:postcard-4x5",
+    "sandbox": "Read the sample result dimensions and assert 1200 by 1500 pixels."
+  },
+  {
+    "id": "png-download",
+    "claim": "Downloads the postcard as a PNG",
+    "where": "Result controls and README",
+    "test": "npm run test:e2e -- --grep @claim:png-download",
+    "sandbox": "Download the sample and check its PNG signature and IHDR dimensions."
+  },
+  {
+    "id": "local-persistence",
+    "claim": "Keeps the latest postcard on this device after refresh",
+    "where": "Local data section, privacy policy, README",
+    "test": "npm run test:e2e -- --grep @claim:local-persistence",
+    "sandbox": "Make a demo postcard, refresh, then restore the saved result."
+  },
+  {
+    "id": "local-backup",
+    "claim": "Exports and imports a local backup",
+    "where": "Local data section, privacy policy, README",
+    "test": "npm run test:e2e -- --grep @claim:local-backup",
+    "sandbox": "Export the demo postcard, delete it, and import the generated backup."
+  },
+  {
+    "id": "no-third-party-runtime",
+    "claim": "Has no analytics, trackers, third-party scripts, or runtime CDNs",
+    "where": "Privacy policy and README",
+    "test": "npm run test:e2e -- --grep @claim:no-third-party-runtime",
+    "sandbox": "Record HTTP(S) requests while opening demo, privacy, and terms pages and allow only this origin."
+  },
+  {
+    "id": "no-face-identification",
+    "claim": "Does not ask for a face identity",
+    "where": "Privacy policy and README",
+    "test": "npm run test:e2e -- --grep @claim:no-face-identification",
+    "sandbox": "A fresh demo creates a completed postcard without any identity step."
+  },
+  {
+    "id": "demo-isolation",
+    "claim": "Demo sample data is separate from your postcards",
+    "where": "Demo banner and demo documentation",
+    "test": "npm run test:e2e -- --grep @claim:demo-isolation",
+    "sandbox": "Create a real postcard, reset and leave the demo, then assert the real caption and saved result remain."
+  }
+]

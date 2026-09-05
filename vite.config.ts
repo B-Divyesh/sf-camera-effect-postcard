@@ -10,7 +10,7 @@ function versionedServiceWorker() {
       const root = process.cwd();
       const dist = resolve(root, 'dist');
       const pages = await Promise.all(['index.html', 'privacy/index.html', 'terms/index.html'].map((page) => readFile(resolve(dist, page), 'utf8')));
-      const shell = ['/', '/index.html', '/offline.html', '/privacy/', '/terms/', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-maskable-512.png'];
+      const shell = ['/', '/?demo=1', '/index.html', '/demo/', '/404.html', '/offline.html', '/offline.css', '/privacy/', '/terms/', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-maskable-512.png'];
       for (const page of pages) for (const match of page.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)) shell.push(match[1]);
       const uniqueShell = [...new Set(shell)];
       const version = `postcard-fx-${createHash('sha256').update(uniqueShell.join('|')).digest('hex').slice(0, 12)}`;
@@ -31,6 +31,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         app: resolve(process.cwd(), 'index.html'),
+        demo: resolve(process.cwd(), 'demo/index.html'),
+        notFound: resolve(process.cwd(), '404.html'),
         privacy: resolve(process.cwd(), 'privacy/index.html'),
         terms: resolve(process.cwd(), 'terms/index.html')
       },

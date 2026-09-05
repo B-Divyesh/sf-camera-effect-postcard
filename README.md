@@ -1,76 +1,87 @@
 # Postcard FX
 
-Postcard FX is a free, phone-first PWA for turning a camera moment into a
-shareable 4:5 PNG. It combines an orientation-safe portrait crop with three
-original generative-geometry effects, a timer, optional caption, and native
-sharing—without uploading video or requiring an account.
+Make a private camera postcard.
 
-Live: <https://camera-effect-postcard.sociobot.in>
+Postcard FX is for friends and event hosts who want a playful phone photo
+without sending video to a social platform. Use the camera or the no-camera
+preview, choose one of three geometric effects, add a short message, and
+download a 4:5 PNG.
 
-## Who it is for
+Live product: <https://camera-effect-postcard.sociobot.in>
 
-Friends and event hosts who want a quick camera toy without installing virtual
-camera software or giving a social platform their video. A complete no-camera
-preview path is available for unsupported devices and denied permissions.
+## Try the sample
 
-## Privacy model
+Open <https://camera-effect-postcard.sociobot.in/?demo=1>, or choose **Try it
+with sample data** on the first screen. The demo starts with Mina and Jo's
+garden-party postcard already made.
 
-- Camera and optional face positioning run in the browser. No frame, face box,
-  caption, or generated PNG is sent to a server.
-- Audio is never requested. The live camera stops after capture, on preview-mode
-  selection, and when the page closes.
-- The most recent PNG is kept in IndexedDB and preferences in localStorage.
-  Both can be exported/imported; the saved PNG can be deleted in the app.
-- There are no analytics, ads, third-party scripts, runtime CDNs, or remote
-  fonts. See the user-facing [privacy policy](./privacy/index.html).
+Demo data is separate from normal postcard data. **Reset demo** restores the
+starter sample. **Start for real** deletes the demo data and opens the ordinary
+maker. See [the demo notes](.factory/demo.md) for its storage namespaces.
+
+## Privacy and product claims
+
+Camera frames, captions, and postcards stay in the browser. Audio is not
+requested. The latest postcard and preferences are local browser data, with
+local backup tools. There are no analytics, trackers, third-party scripts, or
+runtime CDNs.
+
+Every public claim has a browser test using the sample sandbox. The exact
+claim wording, test commands, and observable checks are in
+[.factory/claims.json](.factory/claims.json). Read the user-facing
+[privacy policy](https://camera-effect-postcard.sociobot.in/privacy/) and
+[terms](https://camera-effect-postcard.sociobot.in/terms/) for details.
 
 ## Run locally
 
 Requires Node.js 20 or newer.
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Camera access requires a secure context. Browsers treat `localhost` as secure;
-use HTTPS when testing from another phone on the network.
+Camera access needs a secure context. `localhost` is secure in modern
+browsers. Use HTTPS when testing another phone on a network.
 
 ## Test and build
 
+From a clean checkout:
+
 ```bash
+npm ci
 npm test
+npm run test:claims
 npm run lint
+npm run typecheck
 npm run build
-npm run preview
+npm audit --omit=dev --audit-level=high
+./verify-url.sh http://127.0.0.1:4173/
 ```
 
-`npm test` runs unit coverage for crop/mirroring math plus Playwright flows on
-mobile and desktop, including keyboard capture, axe accessibility checks, and a
-real service-worker offline reload. Playwright serves `dist/` with the deployed
-Azure response policy, so CSP-sensitive flows are covered locally. Run
-`npm run preview:policy` after a build to use that server manually. The exact
-production build command is `npm run build`; deploy the generated `dist/`
-directory with `dist/index.html` at its root.
+`npm test` runs unit and browser regression checks. `npm run test:claims` runs
+the public-claim checks from `.factory/claims.json`. The browser suite builds
+the product and serves `dist/` with the same response policy used in
+production. `verify-url.sh` needs the preview server running; use
+`npm run preview:policy` after a build.
 
-## Browser behavior
+## Deploy
 
-Modern browsers can capture, decorate, and export the postcard. When the
-browser exposes its on-device `FaceDetector`, effects track the detected face
-position. Other browsers use the clearly visible centered portrait guide, and
-the status text explains the fallback. Native file sharing appears where Web
-Share supports image files; PNG download always remains available.
+Run `npm run build` and deploy the generated `dist/` directory as a static
+site. Keep `dist/staticwebapp.config.json`; it supplies the content-security
+policy, cache policy, and designed HTTP 404 response. The factory owns product
+deployment. This repository has no deployment credentials.
 
 ## Project map
 
-- `src/app.ts` — camera lifecycle, countdown, export, share, and PWA behavior
-- `src/effects.ts` — deterministic Canvas 2D effects and postcard framing
-- `src/geometry.ts` — orientation-safe cover crop and face-box mapping
-- `src/storage.ts` — IndexedDB postcard and local preference ownership
+- `src/app.ts` — camera lifecycle, demo mode, countdown, export, and PWA UI
+- `src/storage.ts` — real and `demo:` browser storage namespaces
+- `src/effects.ts` — local Canvas 2D effects and postcard frame
 - `public/service-worker.js` — versioned offline app shell
-- `.factory/design.md` — visual thesis, tokens, motion, and asset provenance
-- `.factory/handoff.md` — verification record and operational handoff
+- `.factory/design.md` — visual thesis and asset provenance
+- `.factory/claims.json` — public claim registry and reproducible evidence
+- `.factory/handoff.md` — verification record and known gaps
 
 ## License
 
-MIT. See [LICENSE](./LICENSE).
+MIT. See [LICENSE](LICENSE).

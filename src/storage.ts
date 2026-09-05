@@ -1,10 +1,23 @@
 export type SavedSettings = { effect: string; timer: number; mirror: boolean; frozen: boolean; caption: string };
 export type SettingsLoad = { settings: SavedSettings | null; recovered: boolean };
-const DB_NAME = 'postcard-fx';
+type StorageScope = 'real' | 'demo';
+
+let databaseName = 'postcard-fx';
+let settingsKey = 'postcard-fx-settings';
 const STORE = 'postcards';
 
 const EFFECTS = ['orbit', 'rays', 'confetti'];
 const TIMERS = [0, 3, 10];
+
+/**
+ * Demo mode intentionally gets a different database and localStorage key.
+ * Nothing in a demo can read or overwrite a visitor's real postcard.
+ */
+export function configureStorage(scope: StorageScope) {
+  const prefix = scope === 'demo' ? 'demo:' : '';
+  databaseName = `${prefix}postcard-fx`;
+  settingsKey = `${prefix}postcard-fx-settings`;
+}
 
 /** Only accept the exact preference shape written by this version of the app. */
 export function isSavedSettings(value: unknown): value is SavedSettings {
@@ -21,7 +34,7 @@ export function isSavedSettings(value: unknown): value is SavedSettings {
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
+    const request = indexedDB.open(databaseName, 1);
     request.onupgradeneeded = () => request.result.createObjectStore(STORE);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -56,9 +69,20 @@ export async function deletePostcard(): Promise<void> {
   db.close();
 }
 
+/** Delete only the currently selected storage namespace. */
+export async function resetCurrentStorage(): Promise<void> {
+  localStorage.removeItem(settingsKey);
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(databaseName);
+    request.onsuccess = () => resolve();
+    request.onblocked = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
 export function saveSettings(settings: SavedSettings) {
   if (!isSavedSettings(settings)) throw new Error('Invalid Postcard FX settings');
-  localStorage.setItem('postcard-fx-settings', JSON.stringify(settings));
+  localStorage.setItem(settingsKey, JSON.stringify(settings));
 }
 
 /**
@@ -66,13 +90,13 @@ export function saveSettings(settings: SavedSettings) {
  * so a bad import or interrupted write can never prevent startup.
  */
 export function loadSettings(): SettingsLoad {
-  const raw = localStorage.getItem('postcard-fx-settings');
+  const raw = localStorage.getItem(settingsKey);
   if (!raw) return { settings: null, recovered: false };
   try {
     const parsed: unknown = JSON.parse(raw);
     if (isSavedSettings(parsed)) return { settings: parsed, recovered: false };
   } catch { /* Handle truncated or manually edited local data below. */ }
-  localStorage.removeItem('postcard-fx-settings');
+  localStorage.removeItem(settingsKey);
   return { settings: null, recovered: true };
 }
 

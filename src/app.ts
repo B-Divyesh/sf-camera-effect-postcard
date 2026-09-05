@@ -1,12 +1,27 @@
 import './style.css';
 import { coverCrop, mapFaceBox, type Box, type Crop } from './geometry';
 import { drawEffect, drawPostcardFrame, type EffectName } from './effects';
-import { blobToDataUrl, dataUrlToBlob, deletePostcard, isSavedSettings, loadPostcard, loadSettings, savePostcard, saveSettings, type SavedSettings } from './storage';
+import { blobToDataUrl, configureStorage, dataUrlToBlob, deletePostcard, isSavedSettings, loadPostcard, loadSettings, resetCurrentStorage, savePostcard, saveSettings, type SavedSettings } from './storage';
 
 type SourceMode = 'idle' | 'preview' | 'camera';
 type DetectedFace = { boundingBox: DOMRectReadOnly };
 type FaceDetectorLike = { detect(input: HTMLVideoElement): Promise<DetectedFace[]> };
 type FaceDetectorConstructor = new (options: { fastMode: boolean; maxDetectedFaces: number }) => FaceDetectorLike;
+
+const isDemo = new URLSearchParams(window.location.search).get('demo') === '1';
+const demoSettings: SavedSettings = {
+  effect: 'confetti',
+  timer: 0,
+  mirror: true,
+  frozen: false,
+  caption: 'Mina and Jo\'s garden party'
+};
+
+configureStorage(isDemo ? 'demo' : 'real');
+if (isDemo) {
+  document.title = 'Demo — Postcard FX';
+  document.querySelector('link[rel="canonical"]')?.setAttribute('href', 'https://camera-effect-postcard.sociobot.in/?demo=1');
+}
 
 const $ = <T extends Element>(selector: string) => document.querySelector<T>(selector)!;
 const video = $('#camera-video') as HTMLVideoElement;
@@ -33,6 +48,9 @@ const restoreButton = $('#restore-button') as HTMLButtonElement;
 const toast = $('#toast') as HTMLElement;
 const toastText = $('#toast-text') as HTMLElement;
 const toastAction = $('#toast-action') as HTMLButtonElement;
+const demoBanner = $('#demo-banner') as HTMLElement;
+const resetDemoButton = $('#reset-demo') as HTMLButtonElement;
+const startRealButton = $('#start-real') as HTMLButtonElement;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 let sourceMode: SourceMode = 'idle';
@@ -143,11 +161,11 @@ async function startCamera() {
   }
 }
 
-function usePreview() {
+function usePreview(focusCapture = true) {
   stopCamera();
   setMode('preview');
   announce('No-camera preview ready. The downloaded postcard uses the abstract portrait shown here.');
-  captureButton.focus();
+  if (focusCapture) captureButton.focus();
 }
 
 function canvasFace(width: number, height: number, crop?: Crop): Box {
@@ -214,7 +232,7 @@ function drawSource(ctx: CanvasRenderingContext2D, source: CanvasImageSource, so
   ctx.restore();
 }
 
-async function makePostcard() {
+async function makePostcard(quiet = false) {
   if (captureBusy || sourceMode === 'idle') return;
   captureBusy = true; captureButton.disabled = true;
   try {
@@ -235,7 +253,7 @@ async function makePostcard() {
     drawEffect(ctx, output.width, output.height, canvasFace(output.width, output.height, crop), effect, performance.now(), motionIsFrozen());
     drawPostcardFrame(ctx, output.width, output.height, captionInput.value.trim());
     const blob = await new Promise<Blob>((resolve, reject) => output.toBlob((value) => value ? resolve(value) : reject(new Error('PNG export failed')), 'image/png'));
-    await displayResult(blob, true);
+    await displayResult(blob, true, !quiet);
     stopCamera();
     setMode('idle');
     announce('Postcard made. Your camera has stopped.');
@@ -244,15 +262,17 @@ async function makePostcard() {
   } finally { captureBusy = false; captureButton.disabled = !mediaStream && sourceMode !== 'preview'; }
 }
 
-async function displayResult(blob: Blob, save: boolean) {
+async function displayResult(blob: Blob, save: boolean, moveFocus = true) {
   latestBlob = blob;
   if (latestUrl) URL.revokeObjectURL(latestUrl);
   latestUrl = URL.createObjectURL(blob);
   resultImage.src = latestUrl; downloadLink.href = latestUrl;
   result.hidden = false; restoreButton.hidden = false;
   if (save) await savePostcard(blob);
-  result.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'start' });
-  downloadLink.focus({ preventScroll: true });
+  if (moveFocus) {
+    result.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'start' });
+    downloadLink.focus({ preventScroll: true });
+  }
 }
 
 async function sharePostcard() {
@@ -310,7 +330,7 @@ async function importData(file: File) {
 
 function setupEvents() {
   cameraButton.addEventListener('click', () => void startCamera());
-  previewButton.addEventListener('click', usePreview);
+  previewButton.addEventListener('click', () => usePreview());
   switchButton.addEventListener('click', () => { facingMode = facingMode === 'user' ? 'environment' : 'user'; void startCamera(); });
   captureButton.addEventListener('click', () => void makePostcard());
   document.querySelectorAll<HTMLButtonElement>('[data-effect]').forEach((button) => button.addEventListener('click', () => selectEffect(button.dataset.effect as EffectName)));
@@ -325,6 +345,44 @@ function setupEvents() {
   window.addEventListener('beforeunload', stopCamera);
   window.addEventListener('online', updateNetworkStatus);
   window.addEventListener('offline', updateNetworkStatus);
+  if (isDemo) {
+    resetDemoButton.addEventListener('click', () => void resetDemo());
+    startRealButton.addEventListener('click', () => void leaveDemo());
+  }
+}
+
+async function loadDemoSample() {
+  saveSettings(demoSettings);
+  restoreSettings();
+  updateCharacterCount();
+  usePreview(false);
+  await makePostcard(true);
+  announce('Sample postcard ready. Change the effect, caption, or timer to try the maker.');
+}
+
+async function resetDemo() {
+  resetDemoButton.disabled = true;
+  try {
+    await resetCurrentStorage();
+    latestBlob = null;
+    if (latestUrl) URL.revokeObjectURL(latestUrl);
+    latestUrl = '';
+    result.hidden = true;
+    restoreButton.hidden = true;
+    await loadDemoSample();
+    showToast('Demo reset to the sample postcard.');
+  } finally {
+    resetDemoButton.disabled = false;
+  }
+}
+
+async function leaveDemo() {
+  startRealButton.disabled = true;
+  try {
+    await resetCurrentStorage();
+  } finally {
+    window.location.assign('/');
+  }
 }
 
 function updateNetworkStatus() {
@@ -359,12 +417,18 @@ function setupServiceWorker() {
 
 async function init() {
   const recoveredPreferences = restoreSettings();
+  demoBanner.hidden = !isDemo;
   updateCharacterCount(); setupEvents(); setupInstall(); setupServiceWorker(); updateNetworkStatus();
   if (recoveredPreferences) announce('Saved preferences were invalid and have been reset. You can continue with a fresh postcard.', true);
   animationFrame = requestAnimationFrame(render);
   try {
     const saved = await loadPostcard();
-    if (saved) { latestBlob = saved; restoreButton.hidden = false; }
+    if (saved) {
+      latestBlob = saved;
+      restoreButton.hidden = false;
+      if (isDemo) await displayResult(saved, false, false);
+    }
+    else if (isDemo) await loadDemoSample();
   } catch { /* Private browsing may disallow IndexedDB; capture and download still work. */ }
 }
 

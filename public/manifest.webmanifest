@@ -1,9 +1,9 @@
 {
   "name": "Postcard FX",
   "short_name": "Postcard FX",
-  "description": "Private, playful geometric camera postcards made on your device.",
+  "description": "Make a private geometric postcard with your camera.",
   "id": "/?source=pwa",
-  "start_url": "/?v=1",
+  "start_url": "/?v=2",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",

@@ -64,6 +64,11 @@ opacity or instantly. A user can also pause live motion with the visible
   real person and does not imply face recognition.
 - PWA icons and interface symbols are original hand-authored SVG/canvas
   geometry in this repository.
+- `public/social-preview.png`: hand-composed 1200 × 630 social preview from
+  the shipped abstract portrait and the product's paper, ink, cobalt, coral,
+  and acid geometry. It contains no text, brands, or people beyond the
+  abstract mannequin already disclosed above. Composed locally on 2026-09-05
+  with ImageMagick; original to Postcard FX.
 - Effect overlays are deterministic Canvas 2D shapes generated locally from
   coarse, ephemeral face-position estimates; no frames or landmark data leave
   the device.

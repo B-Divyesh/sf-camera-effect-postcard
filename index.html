@@ -6,10 +6,22 @@
     <meta name="theme-color" content="#FFF8E8" />
     <meta name="description" content="Make a playful geometric postcard with your camera. Your photo stays on this device." />
     <link rel="canonical" href="https://camera-effect-postcard.sociobot.in/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Postcard FX" />
+    <meta property="og:title" content="Postcard FX — make private camera postcards" />
+    <meta property="og:description" content="Make a playful geometric postcard with your camera. Your photo stays on this device." />
+    <meta property="og:url" content="https://camera-effect-postcard.sociobot.in/" />
+    <meta property="og:image" content="https://camera-effect-postcard.sociobot.in/social-preview.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Postcard FX — make private camera postcards" />
+    <meta name="twitter:description" content="Make a playful geometric postcard with your camera. Your photo stays on this device." />
+    <meta name="twitter:image" content="https://camera-effect-postcard.sociobot.in/social-preview.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-    <title>Postcard FX — private geometric camera postcards</title>
+    <title>Postcard FX — make private camera postcards</title>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to postcard maker</a>
@@ -18,24 +30,41 @@
         <svg aria-hidden="true" viewBox="0 0 40 40"><path d="M5 7h30v26H5z"/><circle cx="14" cy="16" r="5"/><path d="m9 29 9-9 5 5 4-4 8 8"/></svg>
         <span>Postcard <i>FX</i></span>
       </a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="/?demo=1">Demo</a>
+        <a href="#maker">Maker</a>
+        <a href="/privacy/">Privacy</a>
+      </nav>
       <div class="header-status">
         <span id="network-status" class="network-pill"><span aria-hidden="true">●</span> Works offline</span>
         <button id="install-button" class="text-button" type="button" hidden>Install app</button>
       </div>
     </header>
 
+    <aside id="demo-banner" class="demo-banner" aria-label="Demo controls" hidden>
+      <p><strong>Demo — sample data, nothing is saved</strong><span> The sample postcard stays separate from your postcards.</span></p>
+      <div><button id="reset-demo" class="text-button" type="button">Reset demo</button><button id="start-real" class="button button-primary" type="button">Start for real</button></div>
+    </aside>
+
     <main id="main" tabindex="-1">
       <section class="hero" aria-labelledby="page-title">
         <div class="intro">
-          <p class="eyebrow"><span aria-hidden="true">✦</span> Private camera play</p>
-          <h1 id="page-title">A little geometry for a big hello.</h1>
-          <p class="lede">Make a portrait-safe postcard in your browser. No account, no upload, no awkward camera software.</p>
+          <p class="eyebrow"><span aria-hidden="true">✦</span> Private camera postcard maker</p>
+          <h1 id="page-title">Make a private camera postcard</h1>
+          <p class="lede">For friends and event hosts who want a playful photo without sending video to a social platform.</p>
           <div class="permission-actions" id="permission-actions">
-            <button class="button button-primary" id="camera-button" type="button">
+            <a class="button button-primary" href="/?demo=1">Try it with sample data</a>
+            <button class="button button-secondary" id="camera-button" type="button">
               <span aria-hidden="true">◉</span> Use my camera
             </button>
             <button class="button button-secondary" id="preview-button" type="button">Try without a camera</button>
           </div>
+          <p class="action-detail">See a finished sample postcard. Nothing is saved to your postcards.</p>
+          <ul class="plain-facts">
+            <li>Free to use</li>
+            <li>No account or upload</li>
+            <li>Works offline after the first visit</li>
+          </ul>
           <p class="privacy-note"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 10V8a5 5 0 0 1 10 0v2m-11 0h12v10H6z"/></svg> Frames stay on this device. Closing the tab stops the camera and clears the live view.</p>
           <button id="restore-button" class="restore-button" type="button" hidden>Open my last postcard <span aria-hidden="true">→</span></button>
         </div>
@@ -81,8 +110,8 @@
 
       <section id="result" class="result" aria-labelledby="result-title" hidden>
         <div>
-          <p class="eyebrow">Fresh from the press</p>
-          <h2 id="result-title">Your postcard is ready.</h2>
+          <p class="eyebrow">Postcard ready</p>
+          <h2 id="result-title">Your postcard is ready to download</h2>
           <p>Download it, share it with your phone’s share sheet, or make another. The image remains only on this device.</p>
           <div class="result-actions">
             <a id="download-link" class="button button-primary" download="postcard-fx.png" href="#">Download PNG</a>
@@ -96,8 +125,8 @@
 
       <section class="how-it-works" aria-labelledby="how-title">
         <div>
-          <p class="eyebrow">No cloud required</p>
-          <h2 id="how-title">Your face is not the product.</h2>
+          <p class="eyebrow">How it works</p>
+          <h2 id="how-title">Make a postcard in three steps</h2>
         </div>
         <ol>
           <li><span>01</span><strong>Frame it</strong><p>The guide protects portrait composition on tall phones.</p></li>
@@ -116,9 +145,10 @@
     </main>
 
     <footer>
-      <p><strong>Postcard FX</strong> — made for moments, not metrics.</p>
-      <nav aria-label="Legal"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></nav>
+      <p><strong>Postcard FX</strong> makes private camera postcards on your device.</p>
+      <nav aria-label="Footer navigation"><a href="/?demo=1">Demo</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></nav>
       <p class="asset-note">Preview artwork generated for this product; no real person is depicted.</p>
+      <p class="factory-note">Built by Param Factory · build <span id="build-id">2026.09.05</span></p>
     </footer>
 
     <div id="toast" class="toast" role="status" aria-live="polite" hidden><span id="toast-text"></span><button id="toast-action" type="button" hidden>Reload</button></div>

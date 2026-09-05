@@ -28,15 +28,16 @@ async function fileFor(pathname) {
   let candidate = localPath(pathname);
   try {
     if ((await stat(candidate)).isDirectory()) candidate = join(candidate, 'index.html');
-    if ((await stat(candidate)).isFile()) return candidate;
-  } catch { /* Apply the same document fallback as Azure Static Web Apps. */ }
-  return join(root, 'index.html');
+    if ((await stat(candidate)).isFile()) return { file: candidate, status: 200 };
+  } catch { /* Return the configured Static Web Apps response override. */ }
+  const override = policy.responseOverrides?.['404'];
+  return { file: localPath(override?.rewrite ?? '/404.html'), status: override?.statusCode ?? 404 };
 }
 
 createServer(async (request, response) => {
   try {
     const pathname = new URL(request.url ?? '/', `http://${request.headers.host}`).pathname;
-    const file = await fileFor(pathname);
+    const { file, status } = await fileFor(pathname);
     const body = await readFile(file);
     const routeHeaders = pathname.startsWith('/assets/')
       ? policy.routes.find(({ route }) => route === '/assets/*')?.headers ?? {}
@@ -45,7 +46,7 @@ createServer(async (request, response) => {
     for (const [name, value] of Object.entries(headers)) response.setHeader(name, value);
     response.setHeader('Content-Type', types[extname(file)] ?? 'application/octet-stream');
     response.setHeader('Content-Length', body.byteLength);
-    response.writeHead(200);
+    response.writeHead(status);
     response.end(request.method === 'HEAD' ? undefined : body);
   } catch {
     response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });

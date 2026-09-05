@@ -62,11 +62,14 @@ test('persistent navigation targets are at least 44px at the required mobile wid
 
   for (const path of ['/privacy/', '/terms/']) {
     await page.goto(path);
-    for (const selector of ['header .brand', 'header .back', 'footer a']) {
-      const box = await page.locator(selector).boundingBox();
-      expect(box, `${path} ${selector}`).not.toBeNull();
-      expect(box!.width, `${path} ${selector} width`).toBeGreaterThanOrEqual(44);
-      expect(box!.height, `${path} ${selector} height`).toBeGreaterThanOrEqual(44);
+    for (const selector of ['header .brand', 'header nav a', 'footer a']) {
+      const targets = page.locator(selector);
+      for (let index = 0; index < await targets.count(); index += 1) {
+        const box = await targets.nth(index).boundingBox();
+        expect(box, `${path} ${selector} ${index}`).not.toBeNull();
+        expect(box!.width, `${path} ${selector} ${index} width`).toBeGreaterThanOrEqual(44);
+        expect(box!.height, `${path} ${selector} ${index} height`).toBeGreaterThanOrEqual(44);
+      }
     }
   }
 });
@@ -117,14 +120,14 @@ test('installed shell reopens offline', async ({ page, context }) => {
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
   await context.setOffline(true);
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('geometry');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Make a private camera postcard');
   await page.locator('#preview-button').click();
   await expect(page.locator('#capture-button')).toBeEnabled();
   await page.locator('#timer-select').selectOption('0');
   await page.locator('#capture-button').click();
   await expect(page.locator('#result-image')).toHaveJSProperty('naturalWidth', 1200);
   await page.goto('/privacy/', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your camera stays yours.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Privacy for your camera postcards');
   await context.setOffline(false);
 });
 
