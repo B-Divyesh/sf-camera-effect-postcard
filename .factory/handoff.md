@@ -79,8 +79,8 @@ Passed:
 - `npm test`: 5 Vitest checks and 58 Playwright checks across fresh desktop
   Chromium and Pixel 5 projects.
 - `npm run test:claims`: all 19 claim tests in both browser projects (38
-  executions) passed. Each documented individual command is a Playwright
-  `--grep @claim:<id>` invocation and is also covered by this aggregate run.
+  executions) passed. Each documented individual `--grep @claim:<id>` command
+  was then replayed separately and passed.
 - lint, typecheck, build, and production audit passed; audit found 0
   vulnerabilities.
 - Playwright Axe found 0 serious or critical violations on root, privacy, and
