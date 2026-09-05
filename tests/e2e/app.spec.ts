@@ -74,6 +74,33 @@ test('persistent navigation targets are at least 44px at the required mobile wid
   }
 });
 
+test('showing the install action does not shift the mobile page', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(page.locator('#install-button')).toBeHidden();
+  const before = await page.locator('main').evaluate((element) => element.getBoundingClientRect().top);
+  await page.evaluate(() => {
+    const event = new Event('beforeinstallprompt', { cancelable: true });
+    Object.defineProperty(event, 'prompt', { value: async () => undefined });
+    window.dispatchEvent(event);
+  });
+  await expect(page.locator('#install-button')).toBeVisible();
+  const after = await page.locator('main').evaluate((element) => element.getBoundingClientRect().top);
+  expect(Math.abs(after - before)).toBeLessThanOrEqual(0.5);
+});
+
+test('unavailable file sharing gives a download fallback and moves focus to it', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'share', { configurable: true, value: undefined });
+    Object.defineProperty(navigator, 'canShare', { configurable: true, value: undefined });
+  });
+  await page.goto('/?demo=1');
+  await expect(page.locator('#result')).toBeVisible();
+  await page.locator('#share-button').click();
+  await expect(page.locator('#toast-text')).toHaveText('File sharing is not available here. Download the PNG instead.');
+  await expect(page.locator('#download-link')).toBeFocused();
+});
+
 test('keyboard preview path creates and retains a portrait PNG', async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });

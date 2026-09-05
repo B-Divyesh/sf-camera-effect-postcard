@@ -77,6 +77,13 @@
     "sandbox": "Select each demo effect and assert the visible canvas output changes each time."
   },
   {
+    "id": "face-following",
+    "claim": "Supported browsers make effects follow a coarse face position",
+    "where": "Landing instructions and privacy policy",
+    "test": "npm run test:e2e -- --grep @claim:face-following",
+    "sandbox": "Provide two changing on-device face boxes to the demo camera and assert that the rendered effect moves."
+  },
+  {
     "id": "optional-face-positioning",
     "claim": "Face positioning is optional",
     "where": "Landing instructions, privacy policy, README",
@@ -96,6 +103,13 @@
     "where": "Result controls and README",
     "test": "npm run test:e2e -- --grep @claim:png-download",
     "sandbox": "Download the sample and check its PNG signature and IHDR dimensions."
+  },
+  {
+    "id": "native-share",
+    "claim": "Sends the completed PNG to the device share sheet when file sharing is available",
+    "where": "Result instructions and Share postcard action",
+    "test": "npm run test:e2e -- --grep @claim:native-share",
+    "sandbox": "Provide the browser file-sharing API and assert it receives a valid 1200 by 1500 PNG named postcard-fx.png."
   },
   {
     "id": "local-persistence",
@@ -124,6 +138,13 @@
     "where": "Privacy policy and README",
     "test": "npm run test:e2e -- --grep @claim:no-face-identification",
     "sandbox": "A fresh demo creates a completed postcard without any identity step."
+  },
+  {
+    "id": "no-face-position-storage",
+    "claim": "Face positions are not stored",
+    "where": "Privacy policy",
+    "test": "npm run test:e2e -- --grep @claim:no-face-position-storage",
+    "sandbox": "Use demo face detection and capture, then inspect localStorage and IndexedDB for only settings and the finished PNG."
   },
   {
     "id": "demo-isolation",

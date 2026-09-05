@@ -14,6 +14,20 @@ async function pngSize(page: Page) {
   return page.locator('#result-image').evaluate((image: HTMLImageElement) => ({ width: image.naturalWidth, height: image.naturalHeight }));
 }
 
+async function effectChecksum(page: Page) {
+  return page.locator('#effects-canvas').evaluate((canvas: HTMLCanvasElement) => {
+    const pixels = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+    let hash = 2166136261;
+    for (let index = 0; index < pixels.length; index += 4) {
+      hash = Math.imul(hash ^ pixels[index], 16777619);
+      hash = Math.imul(hash ^ pixels[index + 1], 16777619);
+      hash = Math.imul(hash ^ pixels[index + 2], 16777619);
+      hash = Math.imul(hash ^ pixels[index + 3], 16777619);
+    }
+    return hash >>> 0;
+  });
+}
+
 test('@claim:free-use makes and downloads the full sample postcard without a payment step', async ({ page }) => {
   await openDemo(page);
   const download = page.waitForEvent('download');
@@ -26,8 +40,19 @@ test('@claim:phone-first keeps the sample maker usable at a 390px phone width', 
   await page.setViewportSize({ width: 390, height: 844 });
   await openDemo(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  const banner = await page.locator('#demo-banner').boundingBox();
+  const label = await page.locator('#demo-banner p').boundingBox();
+  expect(banner).not.toBeNull();
+  expect(label).not.toBeNull();
+  expect(banner!.height).toBeLessThanOrEqual(104);
+  expect(label!.width).toBeGreaterThanOrEqual(330);
   await expect(page.locator('#capture-button')).toHaveCount(1);
   await expect(page.locator('#result-image')).toHaveJSProperty('naturalHeight', 1500);
+  await page.locator('#result').scrollIntoViewIfNeeded();
+  await expect(page.locator('#demo-banner')).toBeVisible();
+  const stickyBanner = await page.locator('#demo-banner').boundingBox();
+  expect(stickyBanner).not.toBeNull();
+  expect(Math.abs(stickyBanner!.y)).toBeLessThanOrEqual(0.5);
 });
 
 test('@claim:portrait-safe-crop makes a tall, uncropped 4:5 postcard from the sample', async ({ page }) => {
@@ -148,6 +173,41 @@ test('@claim:three-effects changes the visible effect for all three choices', as
   expect(snapshots.size).toBe(3);
 });
 
+test('@claim:face-following moves the rendered effect with a detected face', async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = { x: 600, calls: 0 };
+    const testWindow = window as Window & {
+      setTestFaceX?: (x: number) => void;
+      faceDetectionCalls?: () => number;
+      FaceDetector?: unknown;
+    };
+    testWindow.setTestFaceX = (x) => { state.x = x; };
+    testWindow.faceDetectionCalls = () => state.calls;
+    Object.defineProperty(window, 'FaceDetector', {
+      configurable: true,
+      value: class {
+        async detect() {
+          state.calls += 1;
+          return [{ boundingBox: { x: state.x, y: 280, width: 300, height: 420 } }];
+        }
+      }
+    });
+  });
+
+  await openDemo(page);
+  await page.locator('#motion-toggle').check();
+  await page.locator('[data-effect="orbit"]').click();
+  await page.locator('#camera-button').click();
+  await expect(page.locator('#camera-status')).toContainText('effect follows your face');
+  await expect.poll(() => page.evaluate(() => (window as Window & { faceDetectionCalls?: () => number }).faceDetectionCalls?.() ?? 0)).toBeGreaterThan(0);
+  const first = await effectChecksum(page);
+
+  const previousCalls = await page.evaluate(() => (window as Window & { faceDetectionCalls?: () => number }).faceDetectionCalls?.() ?? 0);
+  await page.evaluate(() => (window as Window & { setTestFaceX?: (x: number) => void }).setTestFaceX?.(1100));
+  await expect.poll(() => page.evaluate(() => (window as Window & { faceDetectionCalls?: () => number }).faceDetectionCalls?.() ?? 0)).toBeGreaterThan(previousCalls);
+  await expect.poll(() => effectChecksum(page)).not.toBe(first);
+});
+
 test('@claim:optional-face-positioning still makes a postcard when face positioning is unavailable', async ({ page }) => {
   await openDemo(page);
   await page.locator('#camera-button').click();
@@ -174,6 +234,38 @@ test('@claim:png-download downloads a valid PNG postcard', async ({ page }) => {
   expect([...bytes.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
   expect(bytes.readUInt32BE(16)).toBe(1200);
   expect(bytes.readUInt32BE(20)).toBe(1500);
+});
+
+test('@claim:native-share sends the completed PNG to an available device share sheet', async ({ page }) => {
+  await page.addInitScript(() => {
+    const testWindow = window as Window & { sharedPostcard?: { name: string; type: string; signature: number[]; width: number; height: number } };
+    Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: async (data: ShareData) => {
+        const file = data.files?.[0];
+        if (!file) throw new Error('No shared file');
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        testWindow.sharedPostcard = {
+          name: file.name,
+          type: file.type,
+          signature: [...bytes.slice(0, 8)],
+          width: view.getUint32(16),
+          height: view.getUint32(20)
+        };
+      }
+    });
+  });
+  await openDemo(page);
+  await page.locator('#share-button').click();
+  await expect.poll(() => page.evaluate(() => (window as Window & { sharedPostcard?: unknown }).sharedPostcard)).toEqual({
+    name: 'postcard-fx.png',
+    type: 'image/png',
+    signature: [137, 80, 78, 71, 13, 10, 26, 10],
+    width: 1200,
+    height: 1500
+  });
 });
 
 test('@claim:local-persistence restores a saved demo postcard after refresh', async ({ page }) => {
@@ -216,6 +308,56 @@ test('@claim:no-face-identification makes a sample postcard without asking for a
   await openDemo(page);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Make a private camera postcard');
   await expect(page.locator('#result-image')).toHaveJSProperty('naturalHeight', 1500);
+});
+
+test('@claim:no-face-position-storage leaves only settings and the finished PNG in demo storage', async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = { calls: 0 };
+    const testWindow = window as Window & { faceDetectionCalls?: () => number; FaceDetector?: unknown };
+    testWindow.faceDetectionCalls = () => state.calls;
+    Object.defineProperty(window, 'FaceDetector', {
+      configurable: true,
+      value: class {
+        async detect() {
+          state.calls += 1;
+          return [{ boundingBox: { x: 92, y: 48, width: 62, height: 90 } }];
+        }
+      }
+    });
+  });
+  await openDemo(page);
+  await page.locator('#camera-button').click();
+  await expect.poll(() => page.evaluate(() => (window as Window & { faceDetectionCalls?: () => number }).faceDetectionCalls?.() ?? 0)).toBeGreaterThan(0);
+  await page.locator('#timer-select').selectOption('0');
+  await page.locator('#capture-button').click();
+  await expect(page.locator('#result')).toBeVisible();
+
+  const stored = await page.evaluate(async () => {
+    const settings = JSON.parse(localStorage.getItem('demo:postcard-fx-settings') ?? 'null') as Record<string, unknown> | null;
+    const databaseNames = (await indexedDB.databases()).map((database) => database.name).filter(Boolean).sort();
+    const postcard = await new Promise<{ keys: IDBValidKey[]; values: Array<{ kind: string; type?: string }> }>((resolve, reject) => {
+      const request = indexedDB.open('demo:postcard-fx');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const database = request.result;
+        const transaction = database.transaction('postcards');
+        const store = transaction.objectStore('postcards');
+        const keysRequest = store.getAllKeys();
+        const valuesRequest = store.getAll();
+        transaction.onerror = () => reject(transaction.error);
+        transaction.oncomplete = () => {
+          const values = valuesRequest.result.map((value) => value instanceof Blob ? { kind: 'Blob', type: value.type } : { kind: typeof value });
+          database.close();
+          resolve({ keys: keysRequest.result, values });
+        };
+      };
+    });
+    return { settings, databaseNames, postcard };
+  });
+
+  expect(Object.keys(stored.settings ?? {}).sort()).toEqual(['caption', 'effect', 'frozen', 'mirror', 'timer']);
+  expect(stored.databaseNames).toEqual(['demo:postcard-fx']);
+  expect(stored.postcard).toEqual({ keys: ['latest'], values: [{ kind: 'Blob', type: 'image/png' }] });
 });
 
 test('@claim:demo-isolation resets sample changes without changing a real postcard', async ({ page }) => {

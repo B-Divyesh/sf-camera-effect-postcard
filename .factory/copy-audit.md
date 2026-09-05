@@ -18,7 +18,7 @@ sentence exceeds 22 words. No banned plain-words terms appear.
 | No-camera preview ready. | 3 | Pass |
 | The downloaded postcard uses the abstract portrait shown here. | 9 | Pass |
 | Your postcard is ready to download | 6 | Pass |
-| Download it, share it with your phone’s share sheet, or make another. | 12 | Pass |
+| Download it, or send it to your device’s share sheet when file sharing is available. | 15 | Pass |
 | The image remains only on this device. | 8 | Pass |
 | Make a postcard in three steps | 7 | Pass |
 | The guide protects portrait composition on tall phones. | 8 | Pass |

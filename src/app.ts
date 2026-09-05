@@ -279,7 +279,7 @@ async function sharePostcard() {
   if (!latestBlob) return;
   const file = new File([latestBlob], 'postcard-fx.png', { type: 'image/png' });
   if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-    try { await navigator.share({ title: 'My Postcard FX', text: 'A little hello, made locally with Postcard FX.', files: [file] }); }
+    try { await navigator.share({ title: 'My Postcard FX', text: 'A private camera postcard made with Postcard FX.', files: [file] }); }
     catch (error) { if (!(error instanceof DOMException && error.name === 'AbortError')) showToast('Sharing did not open. Download the PNG instead.'); }
   } else { showToast('File sharing is not available here. Download the PNG instead.'); downloadLink.focus(); }
 }
