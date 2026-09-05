@@ -1,24 +1,51 @@
-# Postcard FX verification handoff — PASS
+# Postcard FX review handoff — FAIL
 
-**Verified candidate:** `d54c21c7072df16e6353f90c6e81547c186b68f8`
+**Reviewed implementation:** `9afb13d733547022a06fbac08eb1cb84afeeb30d`
+
+**Documentation revision:** `b06b879e6564c11b3772c65718d82092fceab9f5`
+
 **Live URL:** <https://camera-effect-postcard.sociobot.in/>
-**Date:** 2026-08-28 UTC
 
-## Release decision
+**Date:** 2026-09-05 UTC
 
-**PASS.** Independent verification found no defects by severity (Critical, High, Medium, or Low) in the acceptance-contract scope. The live app matches the candidate build byte-for-byte across 16 public artifacts.
+## Result
 
-## Evidence
+**FAIL.** Review 1 found 7 findings and 18 untested public claims. No product
+code was changed in this review.
 
-- Fresh detached clean checkout: `npm ci`, `npm test` (6 unit + 18 browser tests), `npm run lint`, `npm run typecheck`, `npm run build`, and production dependency audit all passed.
-- Live desktop and 390 px checks passed: camera/no-camera flows, three effects, caption limit, timers 0 and 10, portrait 1200 × 1500 PNG, download, persistence, invalid backup/recovery, keyboard/focus, denial recovery, zero console/page errors, and same-origin-only networking.
-- Backup import works with an image under the deployed CSP; reduced motion freezes the effect canvas; persistent 390 px targets meet 44 px height.
-- Axe: 0 serious/critical findings across root/privacy/terms at both sizes. Offline root and privacy reload passed; an isolated exact-build worker update surfaced the in-app update toast.
-- Live headers enforce CSP, HSTS, frame denial, camera-only permission, nosniff and referrer policy; documents revalidate and hashed assets are immutable.
-- Lighthouse mobile: 97 performance, 100 accessibility, 100 best practices, 100 SEO; FCP 1.0 s, LCP 1.2 s, TBT 190 ms, CLS 0.003, 94 KiB transfer.
+The implemented camera and no-camera flows work, including 1200 × 1500 PNG
+creation, offline reload after the first visit, invalid-backup recovery,
+reduced-motion handling, and current accessibility checks. The release is still
+blocked because it has no required demo sandbox or claims registry, the first
+screen does not state the job and audience in plain words, unknown URLs show the
+landing page instead of a 404, required header navigation is missing, social
+metadata is incomplete, and `verify-url.sh` is absent.
 
-Full methods, exact observations, budgets, and reproduction commands are in `.factory/verification-3.md`.
+## Verification run
 
-## Remaining note
+From the clean supplied checkout:
 
-Physical iOS Safari and Android Chrome camera/share-sheet smoke testing is recommended before broad promotion; automated Chromium synthetic-camera and all stated acceptance checks passed.
+```bash
+npm ci
+npm test
+npm run lint
+npm run typecheck
+npm run build
+npm audit --omit=dev --audit-level=high
+```
+
+All commands passed. `npm test` ran 6 unit tests and 18 Playwright tests.
+Playwright browser checks also exercised the live desktop and phone pages, a
+synthetic camera, permission denial, timer boundary, invalid backup, offline
+reload, reduced motion, keyboard focus, and Axe scans. The 16 public live
+artifacts matched the local `dist/` build.
+
+`npx @axe-core/cli` could not launch its Selenium Chrome runner in this worker.
+The allowed Playwright Axe alternative found no violations on root, privacy, or
+terms at desktop and phone sizes. `verify-url.sh` is not supplied, which remains
+a finding.
+
+## Next steps
+
+Read `.factory/review-1.md` before implementation. Address all seven findings,
+create demo-scoped claim tests, and then request another independent review.
