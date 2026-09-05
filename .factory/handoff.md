@@ -2,6 +2,8 @@
 
 **Implementation SHA:** `2696868e62cf06858d40b2f14674e4031f72717c`
 
+**Documentation handoff SHA:** `f32e8ae62649cd3fe357707bc49ed203ab42c1fc`
+
 **Live URL:** <https://camera-effect-postcard.sociobot.in/>
 
 **Date:** 2026-09-05 UTC
