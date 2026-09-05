@@ -1,3 +1,15 @@
+# Postcard FX verification 5 handoff
+
+## Verification 5 status
+
+**PASS — 0 findings and 0 untested public claims.** The independently reviewed implementation is `66af9efecf647734fab57bceddc27d43ee20098c`; the later documentation baseline is `e34fddbd85a512518d5dcfc7027e7bed34e25672`.
+
+Fresh phone and desktop live contexts showed the job, audience, and **Try it with sample data** before scrolling. The demo was populated, visibly labeled, resettable, and isolated from a real postcard. It downloaded a valid 1200 × 1500 PNG. Camera, no-camera, invalid-backup, corrupt-settings recovery, keyboard, reduced-motion, offline, legal, route-title, 404, header, cache, and same-origin request checks passed. Twelve live Axe scans had zero serious or critical issues. All 20 public artifacts matched the clean build.
+
+From a new detached clone at `66af9ef`, `npm ci`, `npm test` (5 unit + 68 browser tests), `npm run test:claims` (44 executions), lint, strict typecheck, build, and production audit passed. Each of the 22 public claim commands was also replayed separately and passed in both browser projects. See `.factory/verification-5.md` for the full evidence and earlier-finding disposition.
+
+The standalone Lighthouse command could not complete because Chrome crashed inside this verifier container. This did not affect any declared claim command; the clean install-shift regression and all functional/accessibility checks passed. A physical iOS Safari and Android Chrome camera/share-sheet check is advisable before broad promotion, but no release-blocking gap is known.
+
 # Postcard FX repair 4 handoff
 
 - **Work order:** `camera-effect-postcard-repair-4`
