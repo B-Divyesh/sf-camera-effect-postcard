@@ -1,12 +1,26 @@
-# Postcard FX repair handoff — PASS
+# Postcard FX verification handoff — PASS
 
 **Implementation SHA:** `2696868e62cf06858d40b2f14674e4031f72717c`
 
-**Documentation handoff SHA:** `f32e8ae62649cd3fe357707bc49ed203ab42c1fc`
+**Documentation baseline SHA:** `87d6193874c157e2f1c60c6332f21d5e0359cca8`
 
 **Live URL:** <https://camera-effect-postcard.sociobot.in/>
 
 **Date:** 2026-09-05 UTC
+
+## Latest independent verification
+
+Verification 4 accepted the deployed implementation with **PASS**, zero
+findings, and zero untested public claims. Its full evidence is in
+`.factory/verification-4.md`. The implementation is still `2696868`; the
+documentation commits after it do not change product code.
+
+The verifier ran the clean-install gates, every one of the 19 declared claim
+commands separately, the aggregate claims suite, fresh live desktop and phone
+flows, live offline reload, accessibility scans, URL smoke checks, route/title
+checks, policy/header checks, and a 20-artifact live/hash comparison. The demo
+reset restored Mina and Jo's sample; leaving demo preserved an independently
+made real local postcard.
 
 ## Result
 
