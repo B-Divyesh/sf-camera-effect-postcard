@@ -141,10 +141,9 @@ test('@claim:camera-stops-tab-close stops the video track when its tab closes', 
   await openDemo(page);
   await page.locator('#camera-button').click();
   await expect(page.locator('#camera-status')).toContainText('Camera ready');
-  await page.close({ runBeforeUnload: true });
-
   const checkPage = await context.newPage();
   await checkPage.goto('/?demo=1');
+  await page.close({ runBeforeUnload: true });
   await expect.poll(() => checkPage.evaluate(() => localStorage.getItem('demo:track-stopped-on-close'))).toBe('yes');
   await checkPage.close();
 });
